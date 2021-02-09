@@ -1,0 +1,109 @@
+Function arguments are passed by value, except arrays which are passed by reference
+Function arguments can be passed by reference if the memory location is passed: & gives the address so int i is passed by reference via &i
+Variables used within a function are local and private to the function. Except static and external variables
+Ascii chars use single quotes int val 'A'; val is 65
+char tricks like convert in to string: char two = 2 + '0'
+leading 0 means octal: int n = 013; // is decimal 10
+leding 0x or 0X is hexadecimal: int n = 0xFF // decimal 31
+enumerations default to numeric values in order starting at 0: ie: enum boolean { NO, YES}; // no =0, yes = 1.
+enumeration values can start at non=zero number. IE: enum suit { HEART=1, DIAMOND, CLUB, SPADE}; // heart =1, diamond =2, club=3, club = 4.
+For type conversion, automatic conversions only work when going from 'narrower' type to 'wider' type.
+Expicit type conversions need to be cast: (type-name) expression
+Bitwise operator ~ does 1's complement: ~0 makes all 1s
+Bitwise operator | is OR 1010 | 1100 -> 1110
+Bitwise operator & is AND 1010 & 1100 -> 1000
+Bitwise ^ is XOR 1010 ^ 1100 = 0110
+Bitwise << left shift 1010 << 2 = 101000
+Bitwise >> right shift 1010 >> 2 = 0010
+break keyword takes you out of the innermost loop or switch
+functions cannot be defined inside other functions
+header files can be utilized to modularize code
+static variables and functions are private for the use of functions in the respective source files
+C preprocessor handles #include and #define
+"multiline #defines need a \ at the end of each line to be continued:
+#define sum(x,y) (x+ \
+y)"
+#define is used for macro substitution: #define sum(x, y) (x+y)
+macros are faster than functions because they replace the text at compile time and don't need to make function calls
+functions use less code than macros because the code is not replaced everywhere, but they are slowing because the function has to be called
+pointers track a specific memory address
+& gives the address of an object
+* dereferences a pointer (aka gives the value of whatever is being pointed at)
+int a[10]; int *pa; pa = &a[0]; *pa would show whatever is in a[0]; *(pa+1) would show whatever is in a[1]
+"Initialize char array example: char *s= ""hello""; // WARNING this is read-only"
+"Initialize char array example: char s[] = ""hello""; // ok to modify, made an array just large enough to fit hello"
+"Initialize char array example: char s[25] = ""hi"" // 25 char slot array with first 3 slots modified to 'h', 'i', '\0'"
+"Multidimensional arrays: 
+char[2][13] = {
+  {array 1 with size 13 },
+  {array 2 with size 13}
+};"
+"pointer to an array: char *name[] = { ""some"", ""thing"",""here""}; the benefit of doing this way is that the individual items like ""some"" can reside anywhere in memory. Where as char name[] = {""we"",""are"",""one""}; all the strings reside back to back in memory and are only separated by escape char \0"
+"main arguments: int main(int argc, char *argv[]) to loop thru argv we can write a basic loop: 
+while(--argc > 0){
+ *++argv; // the next char array item
+}"
+"Struct basics: struct point {
+  int x;
+  int y
+};"
+"Struct basic node: 
+struct node {
+  struct node next;
+  char *val;
+};"
+"1 way to find size of struct array: 
+struct key keytable[NUMKEYS];
+int len = sizeof keytable / sizeof( struct key);"
+"another way to find size of struct array: 
+int len = sizeof keytable / sizeof keytable[0]; // take size of all elements divided by size of 1 element"
+typedef char *String; // makes String a type of char * or character pointer;
+typedef is used to crate new data type names
+"typedef struct tnode *Treeptr;
+typedef struct tnode{
+  char *word; 
+  Treeptr left; 
+  Treeptr right;
+} Treenode;    
+// This creates 2 new type keywords called Treenode (a structure) and Treeptr (a pointer to the structure)"
+"union is a variable that may hold (at different times) objects of different types and sizes, with the compiler keeping track of size and alignment requirements. 
+union u_tag {
+  int ival;
+  float fval;
+  char *sval;
+} u; 
+// u will be large enough to hold the largest  of the three types (implementation specific)"
+Bit-fields are efficient ways to keep track of flag type items using numbers that are powers of 2: 2, 4, 8, 16. It's easy to use bitwise operators on these fields
+"stdin = 0
+stdout = 1
+stderr = 2"
+program < infile
+program > outfile // dangerous, will overwrite any existing content
+program >> outfile // appends content to existing file, if no file exists it creates
+program < infile > outfile
+variable arguments list uses ... in function argument: int printf(char *fmt, ...) // means the number and types of these arguments may vary. Note ... may only occur at the end of an argument list
+"variable length arguments: printf(char *fmt, ...){ 
+  va_list ap; 
+  va_start(ap, fmt); 
+  va_end(ap);
+}"
+"scanf example:
+int day, year;
+char monthname[20];
+scanf(""%d %s %d"", &day, monthname, &year);"
+scanf arguments must be pointers
+scanf does not limit the buffer
+"scanf gotcha:
+int n;
+scanf(""%d"", n); // WRONG, should be:
+scanf(""%d"", &n); // correct"
+File access is done via the FILE struct (provided in stdio.h)
+"File example:
+FILE *fp;
+fp = fopen(fileName, mode); //mode can be r-read, w-write, a-append
+fp == null ? // if null then fopen errored : pointer to file;
+fclose(fp);"
+"fprintf(stderr, ""%s : cannot open\n"", *argv);"
+exit(1); //exits immediately
+char *fgets(char *outputLine, int maxline, FILE *fp); // reads fp one line at a time and null terminates the string in outputLine. It also returns the line unless there is nothing left to read it returns null
+Storage management via malloc(size_t n);
