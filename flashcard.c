@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -17,9 +18,10 @@ Flashcard *makecardsfromcsv(FILE *fp,char *deck);
 Flashcard *buildFlashcard(char *note, char *deck);
 
 int main(int argc, char *argv[]){
-    char *fname;
+    char *fname, input[10];
     FILE *fp;
-    Flashcard *root;
+    Flashcard *iter, *head, *tail;
+    head = iter = NULL;
     if(argc != 2){
         //TODO accept multiple files or files entered via scanf
         fprintf(stderr, "Error invalid argc\n");
@@ -30,13 +32,39 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Error opening file: %s\n", fname);
             exit(2);
         }else{
-            root = makecardsfromcsv(fp, fname);             
+            head = iter = makecardsfromcsv(fp, fname);             
         }
     }
-    while(root != NULL){
-        fprintf(stdout, "name: %s\nnote: %s\n",root->deck, root->note);
-        root= root->next;
-    }
+    while(iter->next != NULL)
+        iter= iter->next;
+    tail = iter;
+    iter = head;
+    fprintf(stdout, "Deck loaded\nNavigation: [n]ext, [p]rev, or [q]uit.\nStart:");
+    do{
+        if(fgets(input, sizeof input, stdin) == NULL)
+            break;
+        switch(tolower(input[0])){
+            case 'n':
+                if(iter->next == NULL)
+                    iter = head;
+                else
+                    iter = iter->next;
+                fprintf(stdout, "%s", iter->note);
+                break;
+            case 'p':
+                if(iter->prev == NULL)
+                    iter = tail;
+                else
+                    iter = iter->prev;
+                fprintf(stdout, "%s", iter->note);
+                break;
+            case 'q':
+                exit(1);
+            default:
+                fprintf(stderr, "Error invalid entry. Use [n]ext, [p]rev, or [q]uit.\n");
+                break;
+        }
+    }while(1);
 }
 
 /* take a tab delimited csv file, read it line by line and produce flashcards
