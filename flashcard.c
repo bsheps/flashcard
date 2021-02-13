@@ -49,14 +49,14 @@ int main(int argc, char *argv[]){
                     iter = head;
                 else
                     iter = iter->next;
-                fprintf(stdout, "%s", iter->note);
+                fprintf(stdout, "\n%s", iter->note);
                 break;
             case 'p':
                 if(iter->prev == NULL)
                     iter = tail;
                 else
                     iter = iter->prev;
-                fprintf(stdout, "%s", iter->note);
+                fprintf(stdout, "\n%s", iter->note);
                 break;
             case 'q':
                 exit(1);
@@ -88,7 +88,8 @@ Flashcard *makecardsfromcsv(FILE *fp,char *deck){
         }else if(multinote){
             // inside multiline note
             size_t linelen = strlen(line);
-            if((temp = (char *)malloc((strlen(out)+linelen)*sizeof(char))) == NULL)
+            size_t outlen = strlen(out);
+            if((temp = (char *)malloc((outlen+linelen+1)*sizeof(char))) == NULL)
                 fprintf(stderr, "Error malloc failed on: %s", line);
             else{
                 strcpy(temp, out);
