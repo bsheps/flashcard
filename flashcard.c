@@ -18,17 +18,17 @@ struct Flashcard{
     Flashcard *prev;
 };
 
-Flashcard *makecardsfromcsv(FILE *fp,char *deck);
-Flashcard *buildFlashcard(char *note, char *deck);
-
 Flashcard *makecardsfromtsv(FILE *fp, char *deck);
-Flashcard *createFlashcard(char *line);
+Flashcard *buildFlashcard(char *line, char *deck);
 Flashcard *newFlashcard(void);
-char *setNote(Flashcard *fc, char *note);
-char *setNoteWithHint(Flashcard *fc, char *note);
+void setNote(Flashcard *fc, char *note);
+void setNoteWithHint(Flashcard *fc, char *note);
+Flashcard *getTail(Flashcard *fc);
+void goThruFlashcards(Flashcard *head, Flashcard *tail);
+void testUser(Flashcard *fc);
 
 int main(int argc, char *argv[]){
-    char *fname, input[10];
+    char *fname;
     FILE *fp;
     Flashcard *iter, *head, *tail;
     head = iter = NULL;
@@ -42,178 +42,118 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Error opening file: %s\n", fname);
             exit(2);
         }else{
-            //head = iter = makecardsfromcsv(fp, fname);             
             head = makecardsfromtsv(fp, fname);
-            exit(0);
         }
     }
-    while(iter->next != NULL)
-        iter= iter->next;
-    tail = iter;
-    iter = head;
+    tail = getTail(head);
+    goThruFlashcards(head,tail);
+    return 1;
+}
+
+void goThruFlashcards(Flashcard *head, Flashcard *tail){
+    Flashcard *iter = head;
+    char input[MAXLINE];
     fprintf(stdout, "Deck loaded\nNavigation: [n]ext, [p]rev, or [q]uit.\nStart:");
-    do{
-        if(fgets(input, sizeof input, stdin) == NULL)
-            break;
+    while(fgets(input, sizeof input, stdin) != NULL){
         switch(tolower(input[0])){
+            case '\n':
             case 'n':
                 if(iter->next == NULL)
                     iter = head;
                 else
                     iter = iter->next;
-                fprintf(stdout, "\n%s", iter->note);
+                testUser(iter);
                 break;
             case 'p':
                 if(iter->prev == NULL)
                     iter = tail;
                 else
                     iter = iter->prev;
-                fprintf(stdout, "\n%s", iter->note);
+                testUser(iter);
                 break;
             case 'q':
-                exit(1);
+                return;
             default:
                 fprintf(stderr, "Error invalid entry. Use [n]ext, [p]rev, or [q]uit.\n");
                 break;
         }
-    }while(1);
+    }
+}
+
+void testUser(Flashcard *fc){
+    char input[MAXLINE];
+    if(fc->hint == NULL){
+        fprintf(stdout, "%s", fc->note);
+    }else{
+        fprintf(stdout, "%s(press any key to see answer)\n", fc->hint);
+        if(fgets(input, sizeof input, stdin) != NULL){
+            fprintf(stdout, "%s", fc->note);
+        }else{
+            fprintf(stderr, "Error with reading input\n");
+        }
+    }
 }
 
 Flashcard *makecardsfromtsv(FILE *fp, char *deck){
     char line[MAXLINE], *f, *out;
-    char delimiter[2] = "\t";
-    Flashcard *root, *head;
+    Flashcard *iter, *head;
     f = fgets(line, MAXLINE, fp);
-    head = root = createFlashcard(line);
-    int i = 1;
-    printf("%d: %s",i++, root->note);
-    while(root != NULL && fgets(line,MAXLINE,fp) == line){
-        root->next = createFlashcard(line);
-        root->next->prev = root;
-        root = root->next;
-        printf("%d: %s",i++, root->note);
-    }
-    while(head != NULL){
-        fprintf(stdout, "hint: %snote:%s",head->hint, head->note);
-        head++;
+    head = iter = buildFlashcard(line, deck);
+    while(iter != NULL && fgets(line,MAXLINE,fp) == line){
+        iter->next = buildFlashcard(line, deck);
+        iter->next->prev = iter;
+        iter = iter->next;
     }
     return head;
 }
 
-Flashcard *createFlashcard(char *line){
+Flashcard *buildFlashcard(char *line, char *deck){
     Flashcard *fc = newFlashcard();
+    fc->deck = deck;
     char *token;
 
     token = strtok(line,DELIMITER);
     setNote(fc, token);
-    if(strcmp(fc->note, token) != 0){
-        fprintf(stderr, "Error with setNote: %s\n", line);
-        exit(2);
-    }
 
     token = strtok(NULL, DELIMITER);
     if(token != NULL){
         setNoteWithHint(fc, token);
-        if(strcmp(fc->note, token) != 0){
-            fprintf(stderr, "Error with setNoteWithHint: %s\n", line);
-            exit(3);
-        }
     }
     
     return fc;
 }
 
 Flashcard *newFlashcard(void){
-    Flashcard *fc = (Flashcard *)malloc(sizeof(Flashcard));
-    fc->hint = NULL;
-    fc->note = NULL;
-    fc->next = NULL;
-    fc->prev = NULL;
+    Flashcard *fc;
+    fc = malloc(sizeof(struct Flashcard) );
     return fc;
 }
 
-char *setNote(Flashcard *fc, char *note){
-    /* need to +2, for possible newline char and end of line marker */
-    fc->note = (char *)malloc((strlen(note)+2) * sizeof(char)); 
-    strcpy(fc->note, note);
-    return fc->note;
+void setNote(Flashcard *fc, char *note){
+    size_t len = strlen(note);
+    if(note[len-1] == '\n' || note[len-1] == '\r'){
+        fc->note = malloc(len * sizeof(char) ); 
+        strcpy(fc->note, note);
+    }else{
+        fc->note = malloc((len+3) * sizeof(char) ); 
+        strcpy(fc->note, note);
+        fc->note[len] = '\r';
+        fc->note[len+1] = '\n';
+        fc->note[len+2] = '\0';
+    }
 }
 
 /*this method is involked when a note has a hint. The hint already exists in
  * the note field. First, move the hint (located in the note field) to the hint
  * field, then insert the note */
-char *setNoteWithHint(Flashcard *fc, char *note){
+void setNoteWithHint(Flashcard *fc, char *note){
     fc->hint = fc->note;
-    fc->hint[strlen(fc->hint)] = '\n';
-    return setNote(fc, note);
+    setNote(fc, note);
 }
 
-
-/* take a tab delimited csv file, read it line by line and produce flashcards
-   in a linked list. Return the head of the list */
-Flashcard *makecardsfromcsv(FILE *fp,char *deck){
-    char line[MAXLINE], *f, *out, *temp, *filename;
-    Flashcard *root, *head; 
-    head = root = NULL;
-    int multinote = FALSE;
-    filename = (char *)malloc((strlen(deck)+1) * sizeof(char));
-    strcpy(filename, deck);
-    do{
-        f = fgets(line, MAXLINE, fp);
-        if(!multinote && line[0] == '"'){
-            // beginning of multiline note
-            multinote = TRUE;
-            if((out = (char *)malloc((strlen(line)+1) * sizeof(char))) == NULL)
-                fprintf(stderr, "Error malloc failed on: %s", line);
-            else
-                strcpy(out, line);
-        }else if(multinote){
-            // inside multiline note
-            size_t linelen = strlen(line);
-            size_t outlen = strlen(out);
-            if((temp = (char *)malloc((outlen+linelen+1)*sizeof(char))) == NULL)
-                fprintf(stderr, "Error malloc failed on: %s", line);
-            else{
-                strcpy(temp, out);
-                strcat(temp, line);
-                free(out);
-                out = temp;
-                if(line[strlen(line)-2] == '"'){
-                    multinote = FALSE;
-                    if(root == NULL){
-                        head = root = buildFlashcard(out, filename);
-
-                    }else{
-                        root->next = buildFlashcard(out, filename);
-                        root->next->prev = root;
-                        root = root->next;
-                    }
-                }
-            }
-        }else{
-            out = (char *)malloc((strlen(line)+1) * sizeof(char));
-            strcpy(out, line);
-            if(root == NULL){
-                head = root = buildFlashcard(out, filename);
-            }else{
-                root->next = buildFlashcard(out, filename);
-                root->next->prev = root;
-                root = root->next;            
-            }
-        }
-    }while(f == line);
-
-    return head;
-}
-
-/* allocates memory and creates new flashcard. Note and Deck are expected to
- * already have memory allocated */
-Flashcard *buildFlashcard(char *note, char *deck){
-    Flashcard *card;
-    card = (Flashcard *) malloc(sizeof(Flashcard));
-    card->note = note;
-    card->deck = deck;
-    card->next = NULL;
-    card->prev = NULL;
-    return card;
+Flashcard *getTail(Flashcard *fc){
+    Flashcard *iter = fc;
+    while(iter->next != NULL)
+        iter = iter->next;
+    return iter;
 }
