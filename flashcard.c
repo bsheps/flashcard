@@ -6,8 +6,12 @@
 #define FALSE 0
 #define TRUE 1
 #define MAXLINE 5000
+
+char DELIMITER[2] = "\t";
+
 typedef struct Flashcard Flashcard;
 struct Flashcard{
+    char *hint;
     char *note;
     char *deck;
     Flashcard *next;
@@ -16,6 +20,12 @@ struct Flashcard{
 
 Flashcard *makecardsfromcsv(FILE *fp,char *deck);
 Flashcard *buildFlashcard(char *note, char *deck);
+
+Flashcard *makecardsfromtsv(FILE *fp, char *deck);
+Flashcard *createFlashcard(char *line);
+Flashcard *newFlashcard(void);
+char *setNote(Flashcard *fc, char *note);
+char *setNoteWithHint(Flashcard *fc, char *note);
 
 int main(int argc, char *argv[]){
     char *fname, input[10];
@@ -32,7 +42,9 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Error opening file: %s\n", fname);
             exit(2);
         }else{
-            head = iter = makecardsfromcsv(fp, fname);             
+            //head = iter = makecardsfromcsv(fp, fname);             
+            head = makecardsfromtsv(fp, fname);
+            exit(0);
         }
     }
     while(iter->next != NULL)
@@ -66,6 +78,76 @@ int main(int argc, char *argv[]){
         }
     }while(1);
 }
+
+Flashcard *makecardsfromtsv(FILE *fp, char *deck){
+    char line[MAXLINE], *f, *out;
+    char delimiter[2] = "\t";
+    Flashcard *root, *head;
+    f = fgets(line, MAXLINE, fp);
+    head = root = createFlashcard(line);
+    int i = 1;
+    printf("%d: %s",i++, root->note);
+    while(root != NULL && fgets(line,MAXLINE,fp) == line){
+        root->next = createFlashcard(line);
+        root->next->prev = root;
+        root = root->next;
+        printf("%d: %s",i++, root->note);
+    }
+    while(head != NULL){
+        fprintf(stdout, "hint: %snote:%s",head->hint, head->note);
+        head++;
+    }
+    return head;
+}
+
+Flashcard *createFlashcard(char *line){
+    Flashcard *fc = newFlashcard();
+    char *token;
+
+    token = strtok(line,DELIMITER);
+    setNote(fc, token);
+    if(strcmp(fc->note, token) != 0){
+        fprintf(stderr, "Error with setNote: %s\n", line);
+        exit(2);
+    }
+
+    token = strtok(NULL, DELIMITER);
+    if(token != NULL){
+        setNoteWithHint(fc, token);
+        if(strcmp(fc->note, token) != 0){
+            fprintf(stderr, "Error with setNoteWithHint: %s\n", line);
+            exit(3);
+        }
+    }
+    
+    return fc;
+}
+
+Flashcard *newFlashcard(void){
+    Flashcard *fc = (Flashcard *)malloc(sizeof(Flashcard));
+    fc->hint = NULL;
+    fc->note = NULL;
+    fc->next = NULL;
+    fc->prev = NULL;
+    return fc;
+}
+
+char *setNote(Flashcard *fc, char *note){
+    /* need to +2, for possible newline char and end of line marker */
+    fc->note = (char *)malloc((strlen(note)+2) * sizeof(char)); 
+    strcpy(fc->note, note);
+    return fc->note;
+}
+
+/*this method is involked when a note has a hint. The hint already exists in
+ * the note field. First, move the hint (located in the note field) to the hint
+ * field, then insert the note */
+char *setNoteWithHint(Flashcard *fc, char *note){
+    fc->hint = fc->note;
+    fc->hint[strlen(fc->hint)] = '\n';
+    return setNote(fc, note);
+}
+
 
 /* take a tab delimited csv file, read it line by line and produce flashcards
    in a linked list. Return the head of the list */
