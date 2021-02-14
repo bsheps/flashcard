@@ -18,7 +18,7 @@ struct Flashcard{
     Flashcard *prev;
 };
 
-Flashcard *makecardsfromtsv(FILE *fp, char *deck);
+Flashcard *makeCardsFromTsv(FILE *fp, char *deck);
 Flashcard *buildFlashcard(char *line, char *deck);
 Flashcard *newFlashcard(void);
 void setNote(Flashcard *fc, char *note);
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Error opening file: %s\n", fname);
             exit(2);
         }else{
-            head = makecardsfromtsv(fp, fname);
+            head = makeCardsFromTsv(fp, fname);
         }
     }
     tail = getTail(head);
@@ -94,7 +94,7 @@ void testUser(Flashcard *fc){
     }
 }
 
-Flashcard *makecardsfromtsv(FILE *fp, char *deck){
+Flashcard *makeCardsFromTsv(FILE *fp, char *deck){
     char line[MAXLINE], *f, *out;
     Flashcard *iter, *head;
     f = fgets(line, MAXLINE, fp);
@@ -107,6 +107,8 @@ Flashcard *makecardsfromtsv(FILE *fp, char *deck){
     return head;
 }
 
+/*buildFlashcard parses thru the tab delimited line, assembling a completed
+ * flashcard */
 Flashcard *buildFlashcard(char *line, char *deck){
     Flashcard *fc = newFlashcard();
     fc->deck = deck;
@@ -129,6 +131,7 @@ Flashcard *newFlashcard(void){
     return fc;
 }
 
+/*This method allocates storage for the note and ensures it ends with a newline*/
 void setNote(Flashcard *fc, char *note){
     size_t len = strlen(note);
     if(note[len-1] == '\n' || note[len-1] == '\r'){
